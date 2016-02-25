@@ -229,7 +229,10 @@ resource "null_resource" "master" {
         ]
     }
     provisioner "local-exec" {
-        command = "cat << 'EOF' > tls-assets/openssl.cnf\n${template_file.openssl.rendered}\nEOF\n${template_file.create-master-tls.rendered} && scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q tls-assets/ca.pem tls-assets/apiserver.pem tls-assets/apiserver-key.pem core@${element(aws_instance.master.*.public_ip, count.index)}:/tmp/ssl/"
+        command = "echo ${template_file.dummy-openssl.rendered} > /dev/null"
+    }
+    provisioner "local-exec" {
+        command = "${template_file.create-master-tls.rendered} && scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -q tls-assets/ca.pem tls-assets/apiserver.pem tls-assets/apiserver-key.pem core@${element(aws_instance.master.*.public_ip, count.index)}:/tmp/ssl/"
     }
     provisioner "remote-exec" {
         inline = [

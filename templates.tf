@@ -34,12 +34,21 @@ resource "template_file" "worker-user-data" {
 }
 
 resource "template_file" "openssl" {
-  template = "${file("templates/openssl.cnf")}"
+  template = "${file("scripts/openssl.sh")}"
   vars = {
     k8s_service_ip = "${var.k8s_service_ip}"
     master_dns = "${replace("DNS.3 = ${var.master_dns_name}\n", "/^DNS.3 = \n/", "")}"
-    instancelist = "${join("\n",formatlist("IP.%v = %s\nIP.%v = %s",count.index * 2 + 2,aws_instance.master.*.public_ip,count.index * 2 + 3,aws_instance.master.*.private_ip))}"
+    ips = "${join(",",formatlist("%s,%s",aws_instance.master.*.public_ip,aws_instance.master.*.private_ip))}"
+    dns = "${join(",",formatlist("%s,%s",aws_instance.master.*.public_dns,aws_instance.master.*.private_dns))}"
   }
+}
+
+resource "template_file" "dummy-openssl" {
+    template = "dummy"
+
+    provisioner "local-exec" {
+        command = "${template_file.openssl.rendered}"
+    }
 }
 
 resource "template_file" "kubectl-config-file" {
